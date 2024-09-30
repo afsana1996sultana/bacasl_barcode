@@ -76,6 +76,9 @@
                     @if(Auth::guard('admin')->user()->role == '1' || in_array('9', json_decode(Auth::guard('admin')->user()->staff->role->permissions)))
                         <a class="{{ ($prefix == 'admin/brand') ? 'active':'' }}" href="{{ route('brand.all') }}">Brands</a>
                     @endif
+                    @if(Auth::guard('admin')->user()->role == '1' || in_array('1', json_decode(Auth::guard('admin')->user()->staff->role->permissions)))
+                        <a class="{{ ($prefix == 'admin/barcode') ? 'active':'' }}" href="{{ route('barcode.all') }}">Barcode</a>
+                    @endif
                 </div>
             </li>
 

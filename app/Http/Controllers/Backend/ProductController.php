@@ -22,6 +22,9 @@ use App\Models\AttributeValue;
 use Illuminate\Support\Collection;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use Milon\Barcode\DNS1D;
+use PDF;
+use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
@@ -749,6 +752,71 @@ class ProductController extends Controller
     }
 
     /* ============== Brand Store Ajax ============ */
+    public function barcode_print(Request $request, $id)
+    {
+        $ids = $id;
+        $variants = $request->get('variant');
+
+        if ($variants) {
+            $product = null;
+            $productstock = ProductStock::findOrFail($variants);
+            return view('backend.invoices.barcode_print', compact('product', 'productstock'));
+        }
+
+        if ($ids) {
+            $productstock = null;
+            $product = Product::findOrFail($ids);
+            return view('backend.invoices.barcode_print', compact('product', 'productstock'));
+        }
+    }
+
+    public function barcode_all_print()
+    {
+        $products = Product::where('status',1)->latest()->get();
+        return view('backend.invoices.barcode_all_print', compact('products'));
+    }
+
+    public function barcode_custom_print()
+    {
+        $products = Product::where('status',1)->latest()->get();
+        return view('backend.product.barcode_custom_print', compact('products'));
+    }
+
+    public function custom_print_ajax($id)
+    {
+        //dd($id);
+        $products = DB::table('products')
+            ->join('product_stocks', 'products.id', '=', 'product_stocks.product_id')
+            ->where('status', 1)
+            ->where('products.id', $id)
+            ->get();
+        //dd($products);
+        return json_encode($products);
+    }
+
+    public function custom_print_qty(Request $request)
+    {
+        if($request->size_qty2){
+            //dd('single');
+            $qty = null;
+            $productstocks =null;
+            $product =null;
+            $qty = $request->size_qty2;
+            $product = Product::where('id', $request->product_id)->first();
+
+        return view('backend.product.barcode_custom_print_all', compact('product','qty','productstocks'));
+        }
+
+        if($request->size_qty){
+            //dd('varient');
+            $qty = null;
+            $productstocks =null;
+            $product =null;
+            $decode = json_encode($request->size_qty);
+            $productstocks = ProductStock::where('product_id', $request->product_id)->get();
+            return view('backend.product.barcode_custom_print_all', compact('product','qty','productstocks','decode'));
+        }
+    }
 
     /* ============== Brand Store Ajax ============== */
     public function brandInsert(Request $request)

@@ -266,6 +266,7 @@ Route::prefix('admin')->middleware('admin')->group(function(){
 
 	/*================  Ajax Category Store ==================*/
 	Route::post('/category/insert',[ProductController::class,'categoryInsert'])->name('category.ajax.store');
+
 	/*================  Ajax Brand Store ==================*/
 	Route::post('/brand/insert',[ProductController::class,'brandInsert'])->name('brand.ajax.store');
 
@@ -323,16 +324,12 @@ Route::prefix('admin')->middleware('admin')->group(function(){
 
 	/*================  Ajax Customer Store ==================*/
 	Route::post('/pos/customer/insert',[PosController::class,'customerInsert'])->name('customer.ajax.store.pos');
+	Route::get('/barcode/print/{id}',[ProductController::class,'barcode_print'])->name('barcode.print');
+	Route::get('/barcode/all',[ProductController::class,'barcode_all_print'])->name('barcode.all');
+	Route::get('/custom/print',[ProductController::class,'barcode_custom_print'])->name('custom.print');
+	Route::get('custome/print/ajax/{id}',[ProductController::class,'custom_print_ajax'])->name('custom.print.ajax');
+	Route::post('custome/print/qty',[ProductController::class,'custom_print_qty'])->name('barcode.print.qty');
 
-	//Admin POS All Routes
-	/*Route::prefix('pos')->group(function(){
-		Route::get('/', [PosController::class, 'index'])->name('pos.index');
-		Route::get('/product/{id}', [PosController::class, 'getProduct'])->name('pos.getProduct');
-		Route::get('/get-products', [PosController::class, 'filter'])->name('pos.filter');
-		Route::POST('/store', [PosController::class, 'store'])->name('pos.store');
-		Route::get('/barcode-product/{id}',[PosController::class,'barcode_ajax'])->name('barcode.ajax');
-		Route::get('/barcode-product-search/{id}',[PosController::class,'barcode_search_ajax'])->name('barcode.search.ajax');
-	});*/
 
 	//Reseller
 	Route::prefix('reseller')->group(function(){
