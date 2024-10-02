@@ -176,10 +176,6 @@ class ProductController extends Controller
                 'created_by'            => Auth::guard('admin')->user()->id,
             ]);
 
-
-
-            // dd($product);
-
             /* ========= Start Multiple Image Upload ========= */
             $images = $request->file('multi_img');
             if ($images) {
@@ -199,52 +195,60 @@ class ProductController extends Controller
 
             /* ========= Product Attributes Start ========= */
             $attribute_values = array();
-            if ($request->has('choice_attributes')) {
-                foreach ($request->choice_attributes as $key => $attribute) {
-                    $atr = 'choice_options' . $attribute;
+            if($request->has('choice_attributes')){
+                foreach ($request->choice_attributes as $key => $attribute)
+                {
+                    $atr = 'choice_options'.$attribute;
                     $item['attribute_id'] = $attribute;
                     $data = array();
 
                     foreach ($request[$atr] as $key => $value) {
                         array_push($data, $value);
                     }
-
                     $item['values'] = $data;
                     array_push($attribute_values, $item);
                 }
             }
-
             if (!empty($request->choice_attributes)) {
                 $product->attributes = json_encode($request->choice_attributes);
                 $product->is_varient = 1;
 
-                if ($request->has('vnames')) {
+                if($request->has('vnames')){
                     $i = 0;
-                    foreach ($request->vnames as $key => $name) {
-                        $stock = ProductStock::create([
-                            'product_id' => $product->id,
-                            'varient'    => $name,
-                            'sku'        => $request->vskus[$i],
-                            'price'      => $request->vprices[$i],
-                            'qty'        => $request->vqtys[$i],
-                        ]);
-
-                        $image = $request->vimages[$i];
-                        if ($image) {
-                            $name_gen = hexdec(uniqid()) . '.' . $image->getClientOriginalExtension();
-                            Image::make($image)->resize(500, 500)->save('upload/products/variations/' . $name_gen);
-                            $save_url = 'upload/products/variations/' . $name_gen;
-                        } else {
-                            $save_url = '';
+                    foreach ($request->vnames as $key => $name){
+                        $stockcheckCode = rand(10000,99999);
+                        $productStockCodeCheck = Product::where('product_code', $stockcheckCode)->first();
+                        if($productStockCodeCheck){
+                            $stockcheckCode = rand( 1,100,999);
                         }
 
-                        $stock->image = $save_url;
-                        $stock->save();
 
+                        $stock = ProductStock::create([
+                            'product_id'=> $product->id,
+                            'varient'   => $name,
+                            'sku'       => $request->vskus[$i],
+                            'price'     => $request->vprices[$i],
+                            'stock_code' => $stockcheckCode,
+                            'qty'       => $request->vqtys[$i],
+                        ]);
+
+                        if($request->vimages){
+                            $image = $request->vimages[$i];
+                            if($image){
+                                $name_gen = hexdec(uniqid()).'.'.$image->getClientOriginalExtension();
+                                Image::make($image)->resize(438,438)->save('upload/products/variations/'.$name_gen);
+                                $save_url = 'upload/products/variations/'.$name_gen;
+                            }else{
+                                $save_url = '';
+                            }
+                            $stock->image = $save_url;
+                        }
+                        $stock->save();
                         $i++;
                     }
                 }
-            } else {
+            }
+            else {
                 $product->attributes = json_encode(array());
             }
 
@@ -252,7 +256,7 @@ class ProductController extends Controller
             $attr_values_sorted = $attr_values->sortByDesc('attribute_id');
 
             $sorted_array = array();
-            foreach ($attr_values_sorted as $attr) {
+            foreach($attr_values_sorted as $attr){
                 array_push($sorted_array, $attr);
             }
 
@@ -472,9 +476,10 @@ class ProductController extends Controller
             if ($request->is_variation_changed) {
                 /* ========= Product Attributes Start ========= */
                 $attribute_values = array();
-                if ($request->has('choice_attributes')) {
-                    foreach ($request->choice_attributes as $key => $attribute) {
-                        $atr = 'choice_options' . $attribute;
+                if($request->has('choice_attributes')){
+                    foreach ($request->choice_attributes as $key => $attribute)
+                    {
+                        $atr = 'choice_options'.$attribute;
                         $item['attribute_id'] = $attribute;
                         $data = array();
 
@@ -491,33 +496,41 @@ class ProductController extends Controller
                     $product->attributes = json_encode($request->choice_attributes);
                     $product->is_varient = 1;
 
-                    if ($request->has('vnames')) {
+                    if($request->has('vnames')){
                         $i = 0;
-                        foreach ($request->vnames as $key => $name) {
+                        foreach ($request->vnames as $key => $name){
+                            $stockcheckCode = rand(10000,99999);
+                            $productStockCodeCheck = Product::where('product_code', $stockcheckCode)->first();
+                            if($productStockCodeCheck){
+                                $stockcheckCode = rand( 1,100,999);
+                            }
+
                             $stock = ProductStock::create([
                                 'product_id' => $product->id,
                                 'varient'    => $name,
                                 'sku'        => $request->vskus[$i],
                                 'price'      => $request->vprices[$i],
+                                'stock_code' => $stockcheckCode,
                                 'qty'        => $request->vqtys[$i],
                             ]);
 
-                            $image = $request->vimages[$i];
-                            if ($image) {
-                                $name_gen = hexdec(uniqid()) . '.' . $image->getClientOriginalExtension();
-                                Image::make($image)->resize(500, 500)->save('upload/products/variations/' . $name_gen);
-                                $save_url = 'upload/products/variations/' . $name_gen;
-                            } else {
-                                $save_url = '';
+                            if($request->vimages){
+                                $image = $request->vimages[$i];
+                                if($image){
+                                    $name_gen = hexdec(uniqid()).'.'.$image->getClientOriginalExtension();
+                                    Image::make($image)->resize(438,438)->save('upload/products/variations/'.$name_gen);
+                                    $save_url = 'upload/products/variations/'.$name_gen;
+                                }else{
+                                    $save_url = '';
+                                }
+                                $stock->image = $save_url;
                             }
-
-                            $stock->image = $save_url;
                             $stock->save();
-
                             $i++;
                         }
                     }
-                } else {
+                }
+                else {
                     $product->attributes = json_encode(array());
                     $product->is_varient = 0;
                 }
@@ -526,7 +539,7 @@ class ProductController extends Controller
                 $attr_values_sorted = $attr_values->sortByDesc('attribute_id');
 
                 $sorted_array = array();
-                foreach ($attr_values_sorted as $attr) {
+                foreach($attr_values_sorted as $attr){
                     array_push($sorted_array, $attr);
                 }
 

@@ -26,12 +26,6 @@
                         </div>
                         <div class="col-md-2 mt-2">
                             <div class="custom_select">
-                               {{-- <select class=" select-active select-nice form-select d-inline-block mb-lg-0 mr-5 mw-200" name="category_id"  id="category_id">
-                                    <option value="">Select Category</option>
-								    @foreach (\App\Models\Category::all() as $key => $category)
-	                                    <option id="{{ $category->id }}" value="{{ $category->id }}">{{ $category->name_en }}</option>
-	                                @endforeach
-                                </select> --}}
                             </div>
                         </div>
                         <div class="col-md-2 mt-2">
@@ -64,14 +58,15 @@
                         </div>
                         <div class="col-md-2 mt-2">
                             <button class="btn btn-primary" type="submit">Filter</button>
+                            <button type="button" class="btn btn-primary" id="posall_shipped">Shipped</button>
                         </div>
                     </div>
                     <div class="table-responsive-sm">
                         <table  id="example" class="table table-bordered table-hover" width="100%">
                             <thead>
                                 <tr>
+                                    <th><input type="checkbox" id="select_all_ids"></th>
                                     <th>Order Code</th>
-                                    <!-- <th>Num. Of Products</th> -->
                                     <th>Customer name</th>
                                     <th>Amount</th>
                                     <th>Profit</th>
@@ -88,11 +83,16 @@
                             <tbody>
                             	@foreach ($orders as $key => $order)
                                 <tr>
+                                    @if($order->delivery_status == 'shipped')
+                                        <td><input type="checkbox"  disabled ></td>
+                                    @else
+                                        <td><input type="checkbox" class="check_ids" name="ids" value="{{$order->id}}"></td>
+                                    @endif
                                     <td>{{ $order->invoice_no }}</td>
                                     <td><b>{{ $order->user->name }}</b></td>
                                     <td>{{ $order->grand_total }}</td>
                                     <td>{{ $order->grand_total - ($order->shipping_charge + $order->pur_sub_total) }}</td>
-                                    <td>{{ $order->staff->user->name ?? '' }}</td>
+                                    <td>{{ $order->staff->user->name ?? 'Admin' }}</td>
                                      <td>
                                     	@php
 			                                $status = $order->delivery_status;
@@ -189,6 +189,59 @@
         }, cb);
 
         cb(start, end);
+    });
+</script>
+
+<script>
+    $(function() {
+        // Function to update "Select All" checkbox based on individual checkboxes
+        function updateSelectAll() {
+            var allChecked = $('.check_ids:checked').length === $('.check_ids').length;
+            $('#select_all_ids').prop('checked', allChecked);
+        }
+
+        // Click event for individual checkboxes
+        $('.check_ids').change(function() {
+            updateSelectAll();
+        });
+
+        // Click event for "Select All" checkbox
+        $('#select_all_ids').change(function() {
+            $('.check_ids').prop('checked', $(this).prop('checked'));
+        });
+    });
+</script>
+
+<script>
+    $(function(e) {
+        $("#posall_shipped").click(function(e) {
+            e.preventDefault();
+            var all_ids = [];
+            $('input:checkbox[name=ids]:checked').each(function() {
+                all_ids.push($(this).val());
+            });
+            $.ajax({
+                url: "{{ route('order.product.shipped') }}",
+                type: "GET",
+                data: {
+                    ids: all_ids,
+                    _token: "{{csrf_token()}}"
+                },
+                success: function(response) {
+                    //console.log('All okk', response)
+                    if (response.status == 'success') {
+                        toastr.success(response.message, 'message');
+                        $.each(all_ids, function(key, val) {
+                            $('#order_ids' + val).remove();
+                        });
+                        window.location.reload(true);
+                        }
+                    else {
+                        toastr.error(response.error, 'Error');
+                    }
+                }
+            });
+        });
     });
 </script>
 @endpush

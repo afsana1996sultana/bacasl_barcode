@@ -36,7 +36,7 @@ var options = {
     }]
 };
 $("#chartContainer").CanvasJSChart(options);
-    
+
 }
 </script>
 @endpush
@@ -142,7 +142,7 @@ $("#chartContainer").CanvasJSChart(options);
             </div>
         @endif
     </div>
-    
+
     <div class="row bg-3">
         @if (Auth::guard('admin')->user()->role != '2')
             <div class="col-xl-4 col-lg-4 col-md-6 col-sm-6">
@@ -190,7 +190,7 @@ $("#chartContainer").CanvasJSChart(options);
             </div>
         @endif
     </div>
-    
+
     <div class="row bg-4">
         @if (Auth::guard('admin')->user()->role != '2')
             <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6">
@@ -255,6 +255,71 @@ $("#chartContainer").CanvasJSChart(options);
         @endif
     </div>
 
+    <div class="row bg-3">
+        @if(Auth::guard('admin')->user()->role == '2')
+            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6">
+                <div class="card card-body mb-4">
+                    <article class="icontext">
+                        <span class="icon icon-sm rounded-circle bg-warning-light"><i
+                                class="text-warning material-icons md-qr_code"></i></span>
+                        <div class="text">
+                            <h4 class="mb-1 card-title text-white">Products</h4>
+                            <span class=" text-white">{{ number_format($productCount->total_products) }}</span>
+                            <span class="text-sm text-white"> In {{ number_format($categoryCount->total_categories) }}
+                                Categories </span>
+                        </div>
+                    </article>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6">
+                <div class="card card-body mb-4">
+                    <article class="icontext">
+                        <span class="icon icon-sm rounded-circle bg-success-light">
+                            <i class="text-success material-icons md-local_shipping"></i>
+                        </span>
+                        <div class="text">
+                            <h4 class="mb-1 card-title text-white">Orders</h4>
+                            <span class="text-white">{{ $vendorOrderCount }}</span>
+                            <span class="text-sm text-white"> Excluding orders in transit </span>
+                        </div>
+                    </article>
+                </div>
+            </div>
+
+
+            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6">
+                <div class="card card-body mb-4">
+                    <article class="icontext">
+                        <span class="icon icon-sm rounded-circle bg-primary-light"><i
+                                class="text-primary material-icons md-monetization_on"></i></span>
+                        <div class="text">
+                            <h4 class="mb-1 card-title text-white">Vendor Wallet</h4>
+                            <span class="text-white">৳ {{ $vendorWalletValue - $withdraw_ammount }}</span>
+                            <span class="text-sm text-white">All Order Revenue</span>
+                        </div>
+                    </article>
+                </div>
+            </div>
+            @endif
+
+
+            @if(Auth::guard('admin')->user()->role == '2')
+            <div class="col-lg-3">
+                <div class="card card-body mb-4">
+                    <article class="icontext">
+                        <span class="icon icon-sm rounded-circle bg-warning-light"><i class="text-warning material-icons md-local_police"></i></span>
+                        <div class="text">
+                            <h6 class="mb-1 card-title text-white">Withdraw Amount</h6>
+                            <span class="text-white">{{ $withdraw_ammount }}TK</span>
+                            <span class="text-sm text-white">All Withdraw Amount from order</span>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        @endif
+    </div>
+
     <div class="card mb-4">
         <header class="card-header">
             <h2 class="text-white">All History</h2>
@@ -268,6 +333,6 @@ $("#chartContainer").CanvasJSChart(options);
 @endsection
 
 @push('footer-script')
-<script type="text/javascript" src="https://canvasjs.com/assets/script/jquery-1.11.1.min.js"></script>  
+<script type="text/javascript" src="https://canvasjs.com/assets/script/jquery-1.11.1.min.js"></script>
 <script type="text/javascript" src="https://canvasjs.com/assets/script/jquery.canvasjs.min.js"></script>
 @endpush

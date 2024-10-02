@@ -262,7 +262,7 @@ class CheckoutController extends Controller
 
         // order details add //
         foreach ($carts as $cart) {
-            // dd($cart);
+            //dd($cart);
             $product = Product::find($cart->id);
             if($cart->options->vendor == 0){
                 $vendor_comission = 0.00;
@@ -271,7 +271,6 @@ class CheckoutController extends Controller
             }
             else {
                 $vendor = Vendor::where('user_id', $cart->options->vendor)->select('vendors.commission','user_id')->first();
-                //dd ($vendor);
                 $vendor_comission = ($cart->price * $vendor->commission)/100;
             }
             if ($cart->options->is_varient == 1) {

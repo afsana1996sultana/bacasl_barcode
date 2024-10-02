@@ -64,14 +64,15 @@
                         </div>
                         <div class="col-md-2 mt-2">
                             <button class="btn btn-primary" type="submit">Filter</button>
+                            <button type="button" class="btn btn-primary" id="all_shipped">Shipped</button>
                         </div>
                     </div>
                     <div class="table-responsive-sm">
                         <table  id="example" class="table table-bordered table-hover" width="100%">
                             <thead>
                                 <tr>
+                                    <th><input type="checkbox" id="select_all_ids"></th>
                                     <th>Order Code</th>
-                                    <!-- <th>Num. Of Products</th> -->
                                     <th>Customer name</th>
                                     <th>Amount</th>
                                     <th>Profit</th>
@@ -88,6 +89,11 @@
                             <tbody>
                             	@foreach ($orders as $key => $order)
                                 <tr>
+                                    @if($order->delivery_status == 'shipped')
+                                        <td><input type="checkbox"  disabled ></td>
+                                    @else
+                                        <td><input type="checkbox" class="check_ids" name="ids" value="{{$order->id}}"></td>
+                                    @endif
                                     <td>{{ $order->invoice_no }}</td>
                                     <td><b>{{ $order->name }}</b></td>
                                     <td>{{ $order->grand_total }}</td>
@@ -159,46 +165,6 @@
             </div>
             <!-- card end// -->
         </div>
-        <!-- <div class="col-md-3">
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h5 class="mb-3">Filter by</h5>
-                    <form>
-                        <div class="mb-4">
-                            <label for="order_id" class="form-label">Order ID</label>
-                            <input type="text" placeholder="Type here" class="form-control" id="order_id" />
-                        </div>
-                        <div class="mb-4">
-                            <label for="order_customer" class="form-label">Customer</label>
-                            <input type="text" placeholder="Type here" class="form-control" id="order_customer" />
-                        </div>
-                        <div class="mb-4">
-                            <label class="form-label">Order Status</label>
-                            <select class="form-select">
-                                <option>Published</option>
-                                <option>Draft</option>
-                            </select>
-                        </div>
-                        <div class="mb-4">
-                            <label for="order_total" class="form-label">Total</label>
-                            <input type="text" placeholder="Type here" class="form-control" id="order_total" />
-                        </div>
-                        <div class="mb-4">
-                            <label for="order_created_date" class="form-label">Date Added</label>
-                            <input type="text" placeholder="Type here" class="form-control" id="order_created_date" />
-                        </div>
-                        <div class="mb-4">
-                            <label for="order_modified_date" class="form-label">Date Modified</label>
-                            <input type="text" placeholder="Type here" class="form-control" id="order_modified_date" />
-                        </div>
-                        <div class="mb-4">
-                            <label for="order_customer_1" class="form-label">Customer</label>
-                            <input type="text" placeholder="Type here" class="form-control" id="order_customer_1" />
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div> -->
     </div>
 </section>
 @endsection
@@ -235,6 +201,59 @@
         }, cb);
 
         cb(start, end);
+    });
+</script>
+
+<script>
+    $(function() {
+        // Function to update "Select All" checkbox based on individual checkboxes
+        function updateSelectAll() {
+            var allChecked = $('.check_ids:checked').length === $('.check_ids').length;
+            $('#select_all_ids').prop('checked', allChecked);
+        }
+
+        // Click event for individual checkboxes
+        $('.check_ids').change(function() {
+            updateSelectAll();
+        });
+
+        // Click event for "Select All" checkbox
+        $('#select_all_ids').change(function() {
+            $('.check_ids').prop('checked', $(this).prop('checked'));
+        });
+    });
+</script>
+
+<script>
+    $(function(e) {
+        $("#all_shipped").click(function(e) {
+            e.preventDefault();
+            var all_ids = [];
+            $('input:checkbox[name=ids]:checked').each(function() {
+                all_ids.push($(this).val());
+            });
+            $.ajax({
+                url: "{{ route('order.product.shipped') }}",
+                type: "GET",
+                data: {
+                    ids: all_ids,
+                    _token: "{{csrf_token()}}"
+                },
+                success: function(response) {
+                    //console.log('All okk', response)
+                    if (response.status == 'success') {
+                        toastr.success(response.message, 'message');
+                        $.each(all_ids, function(key, val) {
+                            $('#order_ids' + val).remove();
+                        });
+                        window.location.reload(true);
+                        }
+                    else {
+                        toastr.error(response.error, 'Error');
+                    }
+                }
+            });
+        });
     });
 </script>
 @endpush

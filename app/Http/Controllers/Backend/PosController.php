@@ -57,6 +57,7 @@ class PosController extends Controller
         }
         return json_encode($product);
     }
+
     public function add_pos_product(Request $request)
     {
         if ($request->product_id) {
@@ -117,6 +118,7 @@ class PosController extends Controller
             return response()->json([ 'status' => 'success','message' => "Added to Cart"]);
         }
     }
+
     public function getPosCartData()
     {
         $date_now = \Carbon\Carbon::now()->format('Y-m-d H:i:s');
@@ -173,6 +175,7 @@ class PosController extends Controller
             'discount_price' => $discount_price, 'totalbuyingPrice' => $totalbuyingPrice,
         ]);
     }
+
     public function posdelete($id)
     {
         if ($id == 0) {
@@ -200,6 +203,7 @@ class PosController extends Controller
         }
         return response()->json(['error'=> 'This product isn\'t available in your POS']);
     }
+
     public function updatePosCart(Request $request)
     {
         $product_id = $request->input('product_id');
@@ -248,22 +252,40 @@ class PosController extends Controller
             ]);
         }
     }
+
     public function filter(Request $request)
     {
          $categoryId=$request->category_id;
          $search_product=$request->search_product;
-         $products = Product::where('status', 1)->get();
+         $search_term_barcode=$request->search_term_barcode;
+         $products = Product::where('status', 1)->latest()->get();
          if($categoryId){
-            $products = Product::where('category_id', $categoryId)->where('status', 1)->get();
+            $products = Product::where('category_id', $categoryId)->where('status', 1)->latest()->get();
          }
          if($search_product){
-            $products = Product::where('name_en', 'like', '%'.$search_product.'%')->where('status', 1)->get();
+            $products = Product::where('name_en', 'like', '%'.$search_product.'%')->where('status', 1)->latest()->get();
+         }
+         if($search_term_barcode){
+             $product_stock = ProductStock::where('stock_code','like','%'.$search_term_barcode.'%')->first();
+             if($product_stock){
+                 $products = Product::where('id', $product_stock->product_id)
+                    ->where('status', 1)
+                    ->latest()
+                    ->get();
+             }else{
+                 $products = Product::where('product_code', 'like', '%'.$search_term_barcode.'%')
+                    ->where('status', 1)
+                    ->latest()
+                    ->get();
+
+             }
          }
         return view('backend.pos.product',compact('products'));
     }
 
     public function barcode_search_ajax($id)
     {
+        //dd($id);
         $product_barcode = Product::where('product_code',$id)->first();
         if($product_barcode != null){
             $product_stock = ProductStock::with('product')->where('product_id',$product_barcode->id)->get();
@@ -500,14 +522,20 @@ class PosController extends Controller
             $ledger->save();
         }
         $amount = 0;
+        $totalqty = 0;
         foreach($order->order_details as $order_detail){
             $product_purchase_price = $order_detail->product->purchase_price;
-            $amount+=$product_purchase_price;
+            $totalqty = $order_detail->qty;
+            $amount+=$product_purchase_price *$totalqty;
         }
+
         $order->pur_sub_total = $amount;
         $order->save();
-        Session::flash('success','Order Complete Successfully');
-        return redirect()->back();
+        $notification = array(
+            'message' => 'Your order has been placed successfully.',
+            'alert-type' => 'success'
+        );
+        return redirect()->route('print.invoice.download', compact('order'))->with($notification);
     }
 
     /**
@@ -594,17 +622,87 @@ class PosController extends Controller
             'customers' => $customers,
         ]);
     }
+
     public function barcode_ajax($id)
     {
-        $product_barcode = Product::where('product_code',$id)->first();
-        // dd($product_barcode);
+        $product_barcode = Product::where('product_code',$id)->orWhere('name_en',$id)->first();
         if($product_barcode != null){
-             //dd($product_barcode);
             return json_encode($product_barcode);
         }else{
             $product_stock_barcode = ProductStock::where('stock_code',$id)->first();
-            //dd($product_stock_barcode);
             return json_encode($product_stock_barcode);
+        }
+    }
+
+    public function pos_barcode_addtocart(Request $request)
+    {
+        $barcode_product=$request->barcode_product_add;
+        $admin_id = auth()->user()->id ?? null;
+        $s_id = session()->get('session_id');
+        if ($s_id == null) {
+            session()->put('session_id', uniqid());
+            $s_id = session()->get('session_id');
+        }
+        if($barcode_product){
+            $product_stock = ProductStock::where('stock_code','like','%'.$barcode_product.'%')->first();
+            $product = Product::where('product_code', 'like', '%'.$barcode_product.'%')->first();
+            if($product_stock){
+                if ($product_stock->qty == 0) {
+                    return response()->json(['error' => "Product stock out"]);
+                }
+                if ($admin_id != null) {
+                    $posCart = PosCart::where('admin_id', $admin_id)
+                        ->where('product_id', $product_stock->product_id)->where('stock_id', $product_stock->id)
+                        ->first();
+                } else {
+                    $posCart = PosCart::where('session_id', $s_id)
+                        ->where('product_id', $product_stock->product_id)->where('stock_id', $product_stock->id)
+                        ->first();
+                }
+                if ($posCart) {
+                    return response()->json(['error' => $product_stock->name . " Allready Added to cart"]);
+                }else{
+                    $posCart =  PosCart::create([
+                        'admin_id'          => auth()->user()->id ?? null,
+                        'session_id'          => $s_id,
+                        'product_id'          => $product_stock->product_id,
+                        'stock_id'          =>  $product_stock->id,
+                        'quantity'          => 1,
+                    ]);
+                    return response()->json([ 'status' => 'success','message' => "Added to Cart"]);
+                }
+
+            }else if($product){
+                if ($product->stock_qty == 0) {
+                    return response()->json(['error' => "Product stock out"]);
+                }
+                if ($admin_id != null) {
+                    $posCart = PosCart::where('admin_id', $admin_id)
+                        ->where('product_id', $product->id)
+                        ->first();
+                } else {
+                    $posCart = PosCart::where('session_id', $s_id)
+                        ->where('product_id', $product->id)
+                        ->first();
+                }
+                if ($posCart) {
+                    return response()->json(['error' => $product->name . " Allready Added to cart"]);
+                }else{
+                    $posCart =  PosCart::create([
+                        'admin_id'          => auth()->user()->id ?? null,
+                        'session_id'          => $s_id,
+                        'product_id'          => $product->id,
+                        'stock_id'          =>  null ,
+                        'quantity'          => 1,
+                    ]);
+                    return response()->json([ 'status' => 'success','message' => "Added to Cart"]);
+                }
+
+            }
+            else{
+                return response()->json(['error' => "This barcode not match"]);
+            }
+
         }
     }
 }

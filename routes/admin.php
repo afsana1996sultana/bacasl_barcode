@@ -244,6 +244,7 @@ Route::prefix('admin')->middleware('admin')->group(function(){
 		Route::post('/orders_update/{id}', [OrderController::class, 'update'])->name('admin.orders.update');
 		Route::get('/invoice/{id}', [OrderController::class, 'invoice_download'])->name('invoice.download');
 		Route::get('/print/invoice/{order}', [OrderController::class, 'invoice_print_download'])->name('print.invoice.download');
+        Route::get('/order/product/shipped', [OrderController::class, 'order_product_shipped'])->name('order.product.shipped');
 	});
 
 	// payment status
@@ -349,14 +350,19 @@ Route::prefix('admin')->middleware('admin')->group(function(){
 		Route::get('/', [PosController::class, 'index'])->name('pos.index');
 		Route::get('/product/{id}', [PosController::class, 'getProduct'])->name('pos.getProduct');
 		Route::get('/get-products', [PosController::class, 'filter'])->name('pos.filter');
+        Route::get('/barcode-product/{id}',[PosController::class,'barcode_ajax'])->name('barcode.ajax');
+		Route::get('/barcode-product-search/{id}',[PosController::class,'barcode_search_ajax'])->name('barcode.search.ajax');
 		Route::POST('/store', [PosController::class, 'store'])->name('pos.store');
         Route::get('add-to-cart/product',[PosController::class, 'add_pos_product'])->name('add.pos.product');
         Route::get('get-pos-cart/product',[PosController::class, 'getPosCartData'])->name('get.pos.CartData');
         Route::get('/pos/delete/{id}', [PosController::class, 'posdelete'])->name('pos.delete.item');
 		Route::get('/pos/cart/update', [PosController::class, 'updatePosCart'])->name('pos.cart.update');
+        Route::get('/barcode/addto/cart',[PosController::class, 'pos_barcode_addtocart'])->name('pos.barcode.addtocart');
 	});
 
     //cash withdraw
+        Route::post('/cash/withdraw', [WithdrawController::class, 'store'])->name('cash.withdraw');
+	    Route::get('/cash-withdraw', [WithdrawController::class, 'index'])->name('cash-withdraw.index');
 		Route::get('/Bkash',[WithdrawController::class,'Bkash'])->name('bkash');
 		Route::get('/Nagad',[WithdrawController::class,'Nagad'])->name('nagad');
 		Route::get('/Bank',[WithdrawController::class,'Bank'])->name('bank');

@@ -22,34 +22,45 @@ class ReportController extends Controller
      */
     public function index(Request $request)
     {
-        $sort_by =null;
-        $products = Product::orderBy('created_at', 'desc');
-        $categories = Category::where('id',$request->category_id)->select('id','name_en')->first();
-        
-        if ($request->has('category_id')){
-            $sort_by = $request->category_id;
-            $products = $products->where('category_id', $sort_by, $categories);
+        if (Auth::guard('admin')->user()->role == '2') {
+            $sort_by =null;
+            $products = Product::orderBy('created_at', 'desc');
+            $categories = Category::where('id',$request->category_id)->select('id','name_en')->first();
+
+            if ($request->has('category_id')){
+                $sort_by = $request->category_id;
+                $products = $products->where('category_id', $sort_by, $categories);
+            }
+            $products = $products->where('created_by', Auth::guard('admin')->user()->id)->get();
+        } else {
+            $sort_by =null;
+            $products = Product::orderBy('created_at', 'desc');
+            $categories = Category::where('id',$request->category_id)->select('id','name_en')->first();
+
+            if ($request->has('category_id')){
+                $sort_by = $request->category_id;
+                $products = $products->where('category_id', $sort_by, $categories);
+            }
+            $products = $products->get();
         }
-        $products = $products->get();
         return view('backend.reports.index', compact('products','categories'));
     }
-    
-    
-    
+
+
     public function profitReport(){
         $currentMonth = Carbon::now()->month;
         $order_today_total  = Order::whereDay('created_at', date('d'))->sum('grand_total');
         $order_today_pur  = Order::whereDay('created_at', date('d'))->sum('pur_sub_total');
         $today_profit = ($order_today_total - $order_today_pur);
-        
+
         $order_monthly_total = Order::whereMonth('created_at', $currentMonth)->sum('grand_total');
         $order_monthly_pur = Order::whereMonth('created_at', $currentMonth)->sum('pur_sub_total');
         $monthly_profit = ($order_monthly_total - $order_monthly_pur);
-        
+
         $order_yearly_total  = Order::whereYear('created_at', date('Y-m-d'))->sum('grand_total');
         $order_yearly_pur  = Order::whereYear('created_at', date('Y-m-d'))->sum('pur_sub_total');
         $yearly_profit = ($order_monthly_total - $order_monthly_pur);
-        
+
         return view('backend.reports.profit_report', compact('today_profit', 'monthly_profit', 'yearly_profit',));
     }
 

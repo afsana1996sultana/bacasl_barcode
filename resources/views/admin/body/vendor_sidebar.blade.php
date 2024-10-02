@@ -74,6 +74,25 @@
                 </div>
             </li>
 
+            <li class="menu-item has-submenu
+                {{ ($route == 'cash-withdraw.index')? 'active':'' }}
+            ">
+                <a class="menu-link" href="#">
+                <i class="icon material-icons md-pie_chart"></i>
+                    <span class="text">Withdraw</span>
+                </a>
+                <div class="submenu">
+                    <a class="{{ ($route == 'cash-withdraw.index') ? 'active':'' }}" href="{{ route('cash-withdraw.index') }}">Cash Withdraw</a>
+                </div>
+            </li>
+
+            <li class="menu-item">
+                <a class="menu-link" href="{{route('withdraw.history')}}">
+                    <i class="icon material-icons md-monetization_on" aria-hidden="true"></i>
+                    <span class="text">Withdraw History</span>
+                </a>
+            </li>
+
         </ul>
         <hr />
         <br />

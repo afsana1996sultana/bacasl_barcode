@@ -250,11 +250,11 @@
                                             <td>{{ $order->sub_total }} <strong>Tk</strong></td>
 
                                             <th>Total</th>
-                                            <td>{{ $order->grand_total + $order->shipping_charge }} <strong>Tk</strong>
+                                            <td>{{ $order->grand_total}} <strong>Tk</strong>
                                             </td>
                                         </tr>
                                     @endif
-                                    
+
                                     <tr>
                                         <th>Address</th>
                                         <td><input type="text" class="form-control" name="address" value="{{ $order->address ?? '' }}"></td>
@@ -345,7 +345,7 @@
                                                     </dl>
                                                     <dl class="dlist">
                                                         <dt>Vendor Comission:</dt>
-                                                        <dd>{{ $sum ?? '0.00' }}</dd>
+                                                        <dd>(-){{ $sum ?? '0.00' }}</dd>
                                                     </dl>
                                                     <dl class="dlist">
                                                         <dt>Receiveable Amount:</dt>
@@ -360,7 +360,7 @@
                                                 @if (!(Auth::guard('admin')->user()->role == '2'))
                                                     <dl class="dlist">
                                                         <dt>Shipping cost:</dt>
-                                                        <dd>{{ $order->shipping_charge ?? '0.00' }}</dd>
+                                                        <dd>(+){{ $order->shipping_charge ?? '0.00' }}</dd>
                                                     </dl>
                                                     <dl class="dlist">
                                                         <dt>Discount:</dt>

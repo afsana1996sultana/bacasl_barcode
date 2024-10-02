@@ -21,6 +21,7 @@ use Illuminate\Support\Carbon;
 use App\Models\WalletTransaction;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\Frontend\SteadFastController;
 
 class OrderController extends Controller
 {
@@ -491,6 +492,31 @@ class OrderController extends Controller
     }
 
 
+    public function order_product_shipped(Request $request)
+    {
+        $ids=$request->ids;
+
+        if(count($ids) > 0){
+            $steadFast = new SteadFastController;
+            $result = $steadFast->bulkCreateInit($ids);
+
+            $status = 'shipped';
+            Order::whereIn('id', $ids)->update(['delivery_status' => $status]);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Products are Successfully Shipped',
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'fail',
+            'message' => "Failed to update status",
+        ]);
+
+    }
+
+
 
     /*================= Start admin_user_update Methoed ================*/
     public function admin_user_update(Request $request, $id)
@@ -524,32 +550,16 @@ class OrderController extends Controller
     /* ============= End getupazilla Method ============== */
 
     /* ============= Start invoice_download Method ============== */
-    // public function invoice_download($id){
-    //     $order = Order::findOrFail($id);
-
-    //     $pdf = PDF::loadView('backend.invoices.invoice',compact('order'))->setPaper('a4')->setOptions([
-    //             'tempDir' => public_path(),
-    //             'chroot' => public_path(),
-    //     ]);
-    //     return $pdf->download('invoice.pdf');
-    // } // end method
-
-    /* ============= Start invoice_download Method ============== */
     public function invoice_download($id){
         $order = Order::findOrFail($id);
-        //dd(app('url')->asset('upload/abc.png'));
         $pdf = PDF::loadView('backend.invoices.invoice',compact('order'))->setPaper('a4');
         return $pdf->download('invoice.pdf');
     } // end method
+
+
     /* ============= End invoice_download Method ============== */
     public function invoice_print_download($id){
-        //dd($id);
         $order = Order::findOrFail($id);
-        //dd(app('url')->asset('upload/abc.png'));
-        // $pdf = PDF::loadView('backend.invoices.invoice',compact('order'))->setPaper('a4');
-        // dd($pdf);
         return view('backend.invoices.invoice_print', compact('order'));
-        // return $pdf->loadView('invoice.pdf');
     } // end method
-
 }

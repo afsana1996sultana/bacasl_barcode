@@ -10,6 +10,9 @@ use App\Models\ProductStock;
 use App\Models\Vendor;
 use App\Models\Order;
 use App\Models\User;
+use App\Models\Staff;
+use App\Models\OrderDetail;
+use App\Models\Withdraw;
 use Auth;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
@@ -36,7 +39,6 @@ class AdminController extends Controller
        public function Dashboard(){
 
         $vendor = Vendor::where('user_id', Auth::guard('admin')->user()->id)->first();
-
         $userCount = DB::table('users')
             ->select(DB::raw('count(*) as total_users'))
             ->where('status', 1)
@@ -51,19 +53,16 @@ class AdminController extends Controller
         $yearly_sale  = Order::whereYear('created_at', date('Y-m-d'))->get();
         $yearly_sale_value  = Order::whereYear('created_at', date('Y-m-d'))->sum('sub_total');
         // Sale-Report End
-        
-        
-        // Purchases-Report Start
+
         // $todays_purchase  = Product::whereDay('created_at', '=', date('d'))->count();
         $todays_purchase = Product::whereDate('created_at', '=', now()->toDateString())->sum('stock_qty');
         $todays_purchase_value = DB::table('products')->whereDate('created_at', '=', now()->toDateString())->sum(DB::raw('purchase_price * stock_qty'));
-    
-    
+
         $monthly_purchase  = Product::whereMonth('created_at', $currentMonth)->sum('stock_qty');
         $monthly_purchase_value = DB::table('products')->whereMonth('created_at', $currentMonth)->sum(DB::raw('purchase_price * stock_qty'));
         $yearly_purchase  = Product::whereYear('created_at', date('Y-m-d'))->sum('stock_qty');
         $yearly_purchase_value = DB::table('products')->whereYear('created_at', date('Y-m-d'))->sum(DB::raw('purchase_price * stock_qty'));
-         
+
         // Purchases-Report End
 
 
@@ -73,11 +72,11 @@ class AdminController extends Controller
                 ->where('vendor_id', Auth::guard('admin')->user()->id)
                 ->where('status', 1)
                 ->first();
-                
+
             if($vendor){
                 $productCount = DB::table('products')
                     ->select(DB::raw('count(*) as total_products'))
-                    ->where('vendor_id', $vendor->id)
+                    ->where('vendor_id', $vendor->user_id)
                     ->where('status', 1)
                     ->first();
             }
@@ -104,16 +103,30 @@ class AdminController extends Controller
             ->first();
 
         $orderCount = DB::table('orders')
-            ->select(DB::raw('count(*) as total_orders, sum(grand_total) as total_sell'))
-            ->first();
-            
+        ->select(DB::raw('count(*) as total_orders, sum(grand_total) as total_sell'))
+        ->first();
+
+        $orderDetails = OrderDetail::where('vendor_id', '!=', 0)
+            ->where('vendor_id', Auth::guard('admin')->user()->id)
+            ->select('order_id', 'vendor_id')
+            ->get();
+
+        $orderIds = $orderDetails->pluck('order_id');
+
+        if ($orderIds->isNotEmpty()) {
+            $vendorOrderCount = $orderIds->count();
+        } else {
+            $vendorOrderCount = 0;
+        }
+
+
         $lowStockCount = DB::table('product_stocks as s')
             ->leftjoin('products as p', 's.product_id', '=', 'p.id')
             ->select(DB::raw('count(s.id) as total_low_stocks'))
             ->where('p.vendor_id', Auth::guard('admin')->user()->id)
             ->where('s.qty', '<=', 5)
             ->first();
-            
+
         if($vendor){
             $lowStockCount = DB::table('product_stocks as s')
                 ->leftjoin('products as p', 's.product_id', '=', 'p.id')
@@ -130,7 +143,7 @@ class AdminController extends Controller
         $product_stock_qty = ProductStock::where('created_at',Carbon::today()->toDateString())->sum('qty');
     	//dd($product_stock_qty);
         $todaysStockIn = ($product_stock_qty+$product_stock_qty);
-        
+
         $todaysStockOut = DB::table('order_details as s')
             ->leftJoin('products as p', 's.product_id', '=', 'p.id')
             ->where('s.created_at', '=', date('d'))
@@ -140,18 +153,29 @@ class AdminController extends Controller
         $order_today_total  = Order::whereDay('created_at', date('d'))->sum('grand_total');
         $order_today_pur  = Order::whereDay('created_at', date('d'))->sum('pur_sub_total');
         $today_profit = ($order_today_total - $order_today_pur);
-        
+
         $order_monthly_total = Order::whereMonth('created_at', $currentMonth)->sum('grand_total');
         $order_monthly_pur = Order::whereMonth('created_at', $currentMonth)->sum('pur_sub_total');
         $monthly_profit = ($order_monthly_total - $order_monthly_pur);
-        
+
         $order_yearly_total  = Order::whereYear('created_at', date('Y-m-d'))->sum('grand_total');
         $order_yearly_pur  = Order::whereYear('created_at', date('Y-m-d'))->sum('pur_sub_total');
         $yearly_profit = ($order_yearly_total - $order_yearly_pur);
         // Today profit End
-    	
+
+        //vendor wallet
+        $wallet = OrderDetail::where('vendor_id', Auth::guard('admin')->user()->id)->sum('price');
+        $commissionValue = OrderDetail::where('vendor_id', Auth::guard('admin')->user()->id)->sum('v_comission');
+
+        //vendor wallet Value
+        $vendorWalletValue = $wallet - $commissionValue;
+
+        //cash withdraw Value
+        $withdraw = Withdraw::where('user_id', Auth::guard('admin')->user()->id)->get();
+        $withdraw_ammount = $withdraw->where('status', 1)->sum('amount');
+
     	return view('admin.index', compact('userCount', 'productCount', 'categoryCount', 'brandCount', 'vendorCount', 'orderCount', 'lowStockCount','todays_sale','todays_sale_value','monthly_sale','monthly_sale_value','yearly_sale','yearly_sale_value','stockCount','todaysStockIn','todaysStockOut','today_profit','monthly_profit','yearly_profit','todays_purchase','monthly_purchase','yearly_purchase','todays_purchase_value','monthly_purchase_value',
-    	'yearly_purchase_value'));
+    	'yearly_purchase_value', 'vendorWalletValue', 'withdraw_ammount', 'vendorOrderCount'));
     } // end method
 
     /*=================== End Dashboard Methoed ===================*/
@@ -172,33 +196,33 @@ class AdminController extends Controller
                 return redirect()->route('admin.dashboard')->with('success','Admin Login Successfully.');
             }else{
                 $notification = array(
-                    'message' => 'Invaild Email Or Password.', 
+                    'message' => 'Invaild Email Or Password.',
                     'alert-type' => 'error'
                 );
                 return back()->with($notification);
             }
-    		
+
     	}else{
             $notification = array(
-                'message' => 'Invaild Email Or Password.', 
+                'message' => 'Invaild Email Or Password.',
                 'alert-type' => 'error'
             );
     		return back()->with($notification);
     	}
-    	
+
     } // end method
 
     /*=================== End Admin Login Methoed ===================*/
 
     /*=================== Start Logout Methoed ===================*/
     public function AminLogout(Request $request){
-        
+
     	Auth::guard('admin')->logout();
         $request->session()->invalidate();
 
         $request->session()->regenerateToken();
         $notification = array(
-            'message' => 'Admin Logout Successfully.', 
+            'message' => 'Admin Logout Successfully.',
             'alert-type' => 'success'
         );
     	return redirect()->route('login_form')->with($notification);
@@ -207,14 +231,14 @@ class AdminController extends Controller
 
     /*=================== Start AdminRegister Methoed ===================*/
     public function AdminRegister(){
-    	
+
     	return view('admin.admin_register');
     } // end method
     /*=================== End AdminRegister Methoed ===================*/
 
      /*=================== Start AdminForgotPassword Methoed ===================*/
     public function AdminForgotPassword(){
-        
+
         return view('admin.admin_forgot_password');
     } // end method
     /*=================== End AdminForgotPassword Methoed ===================*/
@@ -286,7 +310,7 @@ class AdminController extends Controller
 
         return view('admin.admin_change_password');
 
-    }// 
+    }//
 
     /* =============== Start UpdatePassword Method ================*/
     public function UpdatePassword(Request $request){

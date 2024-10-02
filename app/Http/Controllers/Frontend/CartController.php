@@ -15,25 +15,18 @@ use App\Models\ProductStock;
 class CartController extends Controller
 {
     public function index(){
-        // Header Category Start
         $categories = Category::orderBy('name_en','DESC')->where('status','=',1)->limit(5)->get();
         $carts = Cart::content();
-        //dd($carts);
         return view('frontend.cart.index',compact('categories'));
     }
     /* ============ Start AddToCart Methoed ============ */
     public function AddToCart(Request $request, $id){
-        //dd($request->all());
         $options = json_decode(stripslashes($request->get('options')));
-
-        //dd($request);
         $attribute_ids = array();
         $attribute_names = array();
         $attribute_values = array();
         $product = Product::findOrFail($id);
-        //dd($product);
         $carts = Cart::content();
-
         if(!$product->is_varient){
             $prev_cart_qty = 0;
             foreach($carts as $cart){
@@ -43,7 +36,6 @@ class CartController extends Controller
             }
 
             $qty = $prev_cart_qty + $request->quantity;
-
             if($qty > $product->stock_qty){
                 return response()->json(['error'=> 'Not enough stock']);
             }
@@ -59,7 +51,6 @@ class CartController extends Controller
 
             $qty = $prev_cart_qty + $request->quantity;
             $stock = ProductStock::where('product_id', $id)->where('varient', $request->product_varient)->first();
-
             if($qty > $stock->qty){
                 return response()->json(['error'=> 'Not enough stock']);
             }
@@ -109,7 +100,7 @@ class CartController extends Controller
                     'price' => $price,
                     'weight' => 1,
                     'options' => [
-                        'image' => $product->product_thumbnail,
+                        'image' => $stock->image,
                         'vendor' => $product->vendor_id,
                         'slug' => $product->slug,
                         'is_varient' => 1,
@@ -128,7 +119,7 @@ class CartController extends Controller
                     'price' => $price,
                     'weight' => 1,
                     'options' => [
-                        'image' => $product->product_thumbnail,
+                        'image' => $stock->image,
                         'slug' => $product->slug,
                         'vendor' => $product->vendor_id,
                         'is_varient' => 1,
@@ -152,6 +143,7 @@ class CartController extends Controller
                     'options' => [
                         'image' => $product->product_thumbnail,
                         'slug' => $product->slug,
+                        'vendor' => $product->vendor_id,
                         'regular_price' => $regular_price,
                         'is_varient' => 0,
                     ],
@@ -166,6 +158,7 @@ class CartController extends Controller
                     'options' => [
                         'image' => $product->product_thumbnail,
                         'slug' => $product->slug,
+                        'vendor' => $product->vendor_id,
                         'is_varient' => 0,
                     ],
                 ]);

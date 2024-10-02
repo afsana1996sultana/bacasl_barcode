@@ -21,10 +21,30 @@
                     <p style="font-size: 10px; font-weight: bold; line-height: 10px; height: 15px;">
                         Stock: {{ $stock->qty }}
                     </p>
+                    <p style="font-size: 10px; font-weight: bold; line-height: 10px; height: 15px;">
+                        barcode: {{ $stock->stock_code }}
+                    </p>
+                    <p style="font-size: 10px; font-weight: bold; line-height: 10px; height: 15px;">
+                        Purchase Price: {{ $product->purchase_price }}
+                    </p>
                     <div>
-                        <div class="product-price">
-                            <span class="price text-primary">৳{{ $stock->price }}</span>
-                        </div>
+                        @if ($product->discount_price > 0)
+                            @php
+                                if($product->discount_type == 1){
+                                    $price_after_discount = $stock->price - $product->discount_price;
+                                }elseif($product->discount_type == 2){
+                                    $price_after_discount = $stock->price - ($stock->price * $product->discount_price / 100);
+                                }
+                            @endphp
+                            <div class="product-price">
+                                <del class="old-price">৳{{ $stock->price }}</del>
+                                <span class="price text-primary">৳{{ $price_after_discount }}</span>
+                            </div>
+                        @else
+                            <div class="product-price">
+                                <span class="price text-primary">৳{{ $stock->price }}</span>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -46,8 +66,14 @@
                     {{ Str::limit($p_name_en, $limit = 30, $end = '. . .') }}
                 </p>
                 <p style="font-size: 10px; font-weight: bold; line-height: 10px; height: 15px;">
-                        Stock: {{ $product->stock_qty }}
-                    </p>
+                    Stock: {{ $product->stock_qty }}
+                </p>
+                <p style="font-size: 10px; font-weight: bold; line-height: 10px; height: 15px;">
+                    barcode: {{ $product->product_code }}
+                </p>
+                <p style="font-size: 10px; font-weight: bold; line-height: 10px; height: 15px;">
+                    Purchase Price: {{ $product->purchase_price }}
+                </p>
                 <div>
                     @if ($product->discount_price > 0)
                         @php

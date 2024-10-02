@@ -63,11 +63,11 @@
                         <div class="card-body">
                             <form action="">
                                 <div class="row">
-                                    <div class="col-sm-6">
+                                    <div class="col-sm-4">
                                         <input class="form-control" type="text" name="search_product" id="search_product"
                                             placeholder="Search by Name">
                                     </div>
-                                    <div class="col-sm-6">
+                                    <div class="col-sm-4">
                                         <div class="custom_select">
                                             <select name="category_id" id="category_id"
                                                 class="form-control select-active w-100 form-select select-nice">
@@ -77,6 +77,12 @@
                                                 @endforeach
                                             </select>
                                         </div>
+                                    </div>
+                                    <div class="col-sm-4">
+                                        <input class="form-control search_term_barcode" type="text"
+                                            name="search_term_barcode" id="search_term_barcode"
+                                            placeholder="Search by Barcode"
+                                            oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                                     </div>
                                 </div>
                             </form>
@@ -92,10 +98,13 @@
             <div class="col-sm-4">
                 <div class="card mb-4">
                     <div class="card-body">
-                        {{-- <div class="mb-3">
-                            <!-- <input class="form-control" type="text" name="barcode_search_term" id="barcode_search_term" placeholder="Search by Barcode" oninput="barcode()"> -->
-                        </div> --}}
-                        <form action="{{ route('pos.store') }}" method="POST">
+                        <div class="mb-3">
+                            <form action="">
+                                <input class="form-control barcode_product_add" type="text" name="barcode_product_add"
+                                    id="barcode_product_add" placeholder="Add by Barcode">
+                            </form>
+                        </div>
+                        <form action="{{ route('pos.store') }}" method="POST" target="_blank">
                             @csrf
                             <div class="d-flex border-bottom pb-3">
                                 <div class="flex-grow-1">
@@ -126,7 +135,6 @@
                                         </tr>
                                         <tr>
                                             <td>Discount</td>
-                                            {{-- <td style="float: right;">৳ 0.00</td> --}}
                                             <td style="float: right;" class="my-1"> <input type="text" id="discount"
                                                     oninput="this.value = this.value.replace(/[^0-9]/g, '')" name="discount"
                                                     class="form-control" value="0.00" /></td>
@@ -186,8 +194,7 @@
 
                                 </div>
                                 <div class="col-sm-6">
-                                    <input type="submit" class="btn btn-primary" value="Place Order"
-                                        style="float: right;">
+                                    <input type="submit" class="btn btn-primary" value="Place Order" style="float: right;" id="reloadButton">
                                 </div>
                             </div>
                         </form>
@@ -279,7 +286,6 @@
                     contentType: false,
                     processData: false,
                     success: (data) => {
-                        //console.log(data);
                         $('select[name="customer_id"]').html(
                             '<option value="" selected="" disabled="">-- Select Customer --</option>'
                         );
@@ -287,7 +293,6 @@
                             $('select[name="customer_id"]').append('<option value="' +
                                 value.id + '">' + value.name + '</option>');
                         });
-                        // console.log(data);
                         $('#showImage').val('');
                         $('#phone').val('');
                         $('#email').val('');
@@ -299,7 +304,7 @@
                                 position: 'top-end',
                                 icon: 'success',
                                 showConfirmButton: false,
-                                timer: 1000
+                                timer: 2000
                             })
                             Toast.fire({
                                 type: 'success',
@@ -312,26 +317,24 @@
                                 position: 'top-end',
                                 icon: 'error',
                                 showConfirmButton: false,
-                                timer: 1000
+                                timer: 2000
                             })
                             Swal.fire({
                                 icon: 'error',
                                 title: data.error,
                             })
                         }
-                        // End Message
                         $('#Close').click();
                     },
 
                     error: function(data) {
                         $.each(data.responseJSON.errors, function(key, value) {
-                            // console.log(value);
                             var Toast = Swal.mixin({
                                 toast: true,
                                 position: 'top-end',
                                 icon: 'error',
                                 showConfirmButton: false,
-                                timer: 1000,
+                                timer: 2000,
                             })
                             Toast.fire({
                                 title: value
@@ -349,6 +352,7 @@
         $(document).ready(function() {
             $('body').addClass('aside-mini');
         });
+
         //discount price
         $(document).on("keyup", "#discount", function() {
             var subtotal = parseFloat($('#subtotal_text').val());
@@ -375,6 +379,7 @@
                 $('#total').val(subtotal_dicount);
             }
         });
+
         //paid price
         $(document).on("keyup", "#paid_amount", function() {
             var subtotal = parseFloat($('#subtotal_text').val());
@@ -442,6 +447,7 @@
                 }
             });
         });
+
         //remove
         $(document).on('click', '.remove-posCart', function(e) {
             var btn = $(this);
@@ -464,6 +470,7 @@
                 }
             });
         });
+
         //Update Cart
         $(document).on('click', '.changeQuantity', function() {
             var product_id = $(this).closest('.cart__product').find('.product_id').val();
@@ -500,12 +507,11 @@
             });
         });
     </script>
+
     <script>
-        //filter category
         $(document).on('change', '#category_id', function() {
             var category_id = $(this).val();
             var search_product = $('#search_product').val();
-            console.log(search_product)
             $.ajax({
                 method: "GET",
                 url: '{{ route('pos.filter') }}',
@@ -522,11 +528,11 @@
                     }
                 }
             })
-        })
+        });
+
         //search product
         $(document).on('keyup', '#search_product', function() {
             var search_product = $(this).val();
-            console.log(search_product)
             if (search_product.length > 2) {
                 $.ajax({
                     method: "GET",
@@ -559,16 +565,77 @@
                     }
                 })
             }
-        })
-    </script>
-    {{-- <script>
-        $(".product-row .product-row-list").hide();
-        $(".product-row .product-row-list").slice(0, 18).show();
-        $("#seemore").click(function(){
-            $(".product-row .product-row-list:hidden").slice(0, 18).slideDown();
-            if ($(".product-row .product-row-list:hidden").length == 0) {
-                $("#load").fadeOut('slow');
+        });
+
+        //search barcode
+        $(document).on('keyup', '.search_term_barcode', function() {
+            var search_term_barcode = $(this).val();
+            if (search_term_barcode.length > 4) {
+                $.ajax({
+                    method: "GET",
+                    url: '{{ route('pos.filter') }}',
+                    data: {
+                        search_term_barcode: search_term_barcode
+                    },
+                    success: function(response) {
+                        if (response) {
+                            $('#product_wrapper').html(response);
+                        } else {
+                            $('#product_wrapper').html(`
+                        <div class="text-center">@lang('Product Not Found')</div>
+                    `);
+                        }
+                    }
+                })
+            } else {
+                $.ajax({
+                    method: "GET",
+                    url: '{{ route('pos.filter') }}',
+                    success: function(response) {
+                        if (response) {
+                            $('#product_wrapper').html(response);
+                        } else {
+                            $('#product_wrapper').html(`
+                        <div class="text-center">@lang('Product Not Found')</div>
+                    `);
+                        }
+                    }
+                })
             }
         });
-    </script> --}}
+
+        //barcode product add
+        $(document).on('keyup', '#barcode_product_add', function() {
+            var barcode_product_add = $(this).val();
+            if (barcode_product_add.length > 4) {
+                $.ajax({
+                    method: "GET",
+                    url: '{{ route('pos.barcode.addtocart') }}',
+                    data: {
+                        barcode_product_add: barcode_product_add
+
+                    },
+                    success: function(response) {
+                        if (response.status == 'success') {
+                            getCartData();
+                            toastr.success(response.message, 'message');
+                            $('#barcode_product_add').val('');
+                        } else if (response.status == 'error') {
+                            toastr.error(response.error, 'Error');
+                        } else {
+                            toastr.error(response.error, 'Error');
+                        }
+                    }
+                })
+            }
+        });
+    </script>
+
+    <script>
+        document.getElementById("reloadButton").addEventListener("click", function() {
+            setTimeout(function() {
+                location.reload();
+            }, 60);
+        });
+    </script>
 @endpush

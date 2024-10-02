@@ -43,70 +43,77 @@
 				                </form>
 				                <table id="example" class="table table-bordered table-hover mb-0">
                                     <thead>
-                                         <tr>
-				                            <th class="text-left">SKU</th>
-				                            <th class="text-left">Product Name</th>
-				                            <th class="text-center">Variant</th>
-				                            <th class="text-center">Entry Date</th>
-				                            <th class="text-center">Purchase Price</th>
-				                            <th class="text-center">Sale Price</th>
-				                            <th class="text-center">Profit</th>
-				                            <th class="text-center">Stock Qty</th>
-				                            <th class="text-center">Stock Value</th>
-				                        </tr>
+                                        <tr>
+                                            <th class="text-left">SKU</th>
+                                            <th class="text-left">Product Name</th>
+                                            <th class="text-center">Variant</th>
+                                            <th class="text-center">Entry Date</th>
+                                            <th class="text-center">Purchase Price</th>
+                                            <th class="text-center">Sale Price</th>
+                                            <th class="text-center">Profit</th>
+                                            <th class="text-center">Stock Qty</th>
+                                            <th class="text-center">Stock Value</th>
+                                        </tr>
                                     </thead>
-                                    @php
-                                        $amount=0;
-                                        $sum1=0;
-                                    @endphp
-				                    @if($products->count() > 0)
-                                    <tbody>
-                                        @foreach ($products as $key => $product)
-					                        	@if($product->is_varient)
-					                        		@foreach ($product->stocks as $key => $stock)
-                                                    <tr>
-						                                <td>{{ $product->product_code }}</td>
-						                                <td>{{ $product->name_en }}</td>
-						                                <td class="text-center">{{ $stock->varient }}</td>
-						                                <td class="text-center">{{ date_format(date_create($product->created_at),"d M Y" ) }}</td>
-						                                <td class="text-center">{{ $product->purchase_price }}tk </td>
-						                                <td class="text-center">{{ $product->regular_price }}tk</td>
-						                                <td class="text-center">{{ ($product->regular_price - $product->purchase_price) }}tk</td>
-						                                <td class="text-center">{{ $stock->qty }}</td>
-						                                <td class="text-center">{{ $product->purchase_price }} x {{ $stock->qty }} = {{ $stock->qty * $product->purchase_price}}tk</td>
-						                            </tr>
-						                            @endforeach
-					                        	@else
-						                            <tr>
-						                                <td>{{ $product->product_code }}</td>
-						                                <td>{{ $product->name_en }}</td>
-						                                <td class="text-center">-</td>
-						                                <td class="text-center">{{ date_format(date_create($product->created_at),"d M Y" ) }}</td>
-						                                <td class="text-center">{{ $product->purchase_price }}tk</td>
-						                                <td class="text-center">{{ $product->regular_price }}tk</td>
-						                                <td class="text-center">{{ ($product->regular_price - $product->purchase_price) }}tk</td>
-						                                <td class="text-center">{{ $product->stock_qty }}</td>
-						                                <td class="text-center">{{ $product->purchase_price }} x {{ $product->stock_qty }} = {{ $product->stock_qty * $product->purchase_price }}tk</td>
-						                            </tr>
-					                            @endif
-					                        @php
-					                        $amount+=$product->stock_qty;
-                                              $sum1+=$product->stock_qty * $product->purchase_price;
+
+                                    @if($products->count() > 0)
+                                        <tbody>
+                                            @php
+                                                $totalQty = 0;
+                                                $totalStockValue = 0;
                                             @endphp
+                                            @foreach ($products as $key => $product)
+                                                @if($product->is_varient)
+                                                    @foreach ($product->stocks as $key => $stock)
+                                                        <tr>
+                                                            <td>{{ $product->product_code }}</td>
+                                                            <td>{{ $product->name_en }}</td>
+                                                            <td class="text-center">{{ $stock->varient }}</td>
+                                                            <td class="text-center">{{ date_format(date_create($product->created_at), "d M Y") }}</td>
+                                                            <td class="text-center">{{ $product->purchase_price }}tk</td>
+                                                            <td class="text-center">{{ $product->regular_price }}tk</td>
+                                                            <td class="text-center">{{ $product->regular_price - $product->purchase_price }}tk</td>
+                                                            <td class="text-center">{{ $stock->qty }}</td>
+                                                            <td class="text-center">{{ $product->purchase_price }} x {{ $stock->qty }} = {{ $stock->qty * $product->purchase_price }}tk</td>
+                                                        </tr>
+                                                        @php
+                                                            $totalQty += $stock->qty;
+                                                            $totalStockValue += $stock->qty * $product->purchase_price;
+                                                        @endphp
+                                                    @endforeach
+                                                @else
+                                                    <tr>
+                                                        <td>{{ $product->product_code }}</td>
+                                                        <td>{{ $product->name_en }}</td>
+                                                        <td class="text-center">-</td>
+                                                        <td class="text-center">{{ date_format(date_create($product->created_at), "d M Y") }}</td>
+                                                        <td class="text-center">{{ $product->purchase_price }}tk</td>
+                                                        <td class="text-center">{{ $product->regular_price }}tk</td>
+                                                        <td class="text-center">{{ $product->regular_price - $product->purchase_price }}tk</td>
+                                                        <td class="text-center">{{ $product->stock_qty }}</td>
+                                                        <td class="text-center">{{ $product->purchase_price }} x {{ $product->stock_qty }} = {{ $product->stock_qty * $product->purchase_price }}tk</td>
+                                                    </tr>
+                                                    @php
+                                                        $totalQty += $product->stock_qty;
+                                                        $totalStockValue += $product->stock_qty * $product->purchase_price;
+                                                    @endphp
+                                                @endif
                                             @endforeach
-                                    </tbody>
+                                        </tbody>
                                         <tfoot>
                                             <tr>
                                                 <td colspan="7" class="text-center"></td>
-                                                <td class="text-center">Sum : {{ $amount }}</td>
-                                                <td class="text-center">Sum : {{ $sum1 }}</td>
+                                                <td class="text-center">Total Qty: {{ $totalQty }}</td>
+                                                <td class="text-center">Total Value: {{ $totalStockValue }}tk</td>
                                             </tr>
                                         </tfoot>
-                                     @else
-					                    <tbody>
-					                       
-					                    </tbody>
-				                    @endif
+                                    @else
+                                        <tbody>
+                                            <tr>
+                                                <td colspan="9" class="text-center">No products found</td>
+                                            </tr>
+                                        </tbody>
+                                    @endif
                                 </table>
 				            </div>
 		                </div>
